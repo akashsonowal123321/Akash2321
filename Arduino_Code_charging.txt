@@ -1,0 +1,101 @@
+#include <Wire.h>
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(10, 9, 8, 7, 6, 5); // Initialize the LCD with the appropriate pins
+
+#define trigPin1 12 // Ultrasonic Sensor 1 Trigger Pin
+#define echoPin1 13 // Ultrasonic Sensor 1 Echo Pin
+#define trigPin2 2  // Ultrasonic Sensor 2 Trigger Pin
+#define echoPin2 3  // Ultrasonic Sensor 2 Echo Pin
+
+#define relay1Pin 11 // Relay Module 1 Control Pin
+#define relay2Pin 4  // Relay Module 2 Control Pin
+
+void setup() {
+  // Initialize the LCD display
+  lcd.begin(16, 2); // Initialize a 16x2 LCD
+  lcd.clear();
+  lcd.print("Initializing...");
+
+  // Initialize Ultrasonic Sensor pins
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+
+  // Initialize Relay Module pins
+  pinMode(relay1Pin, OUTPUT);
+  pinMode(relay2Pin, OUTPUT);
+
+  // Initialize serial communication
+  Serial.begin(9600);
+
+  delay(2000); // Wait for 2 seconds
+  lcd.clear();
+}
+
+void loop() {
+  // Measure distance from Ultrasonic Sensor 1
+  long duration1, distance1;
+  digitalWrite(trigPin1, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin1, LOW);
+  duration1 = pulseIn(echoPin1, HIGH);
+  distance1 = (duration1 / 2) / 29.1; // Calculate distance in centimeters
+
+  // Measure distance from Ultrasonic Sensor 2
+  long duration2, distance2;
+  digitalWrite(trigPin2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin2, LOW);
+  duration2 = pulseIn(echoPin2, HIGH);
+  distance2 = (duration2 / 2) / 29.1; // Calculate distance in centimeters
+
+  // Display distance on the LCD screen
+  if(distance1 < 15){
+  lcd.setCursor(0, 0);
+  lcd.print("CAR_1_ON__MODE");
+  }
+  else{
+   lcd.clear();
+   lcd.setCursor(0, 0);  
+  lcd.print("CAR_1_OFF_MODE");
+  }
+
+  if(distance2 < 15){
+  lcd.setCursor(0, 1);
+  lcd.print("CAR_2_ON__MODE");
+  }
+  else{   
+  lcd.setCursor(0, 1);
+  lcd.print("CAR_2_OFF_MODE");
+  }
+  // Send distance data over serial
+  Serial.print("Distance1: ");
+  Serial.print(distance1);
+  Serial.print(" cm\t");
+  //delay(100);
+  Serial.print("Distance2: ");
+  Serial.print(distance2);
+  Serial.println(" cm\t");
+delay(100);
+  // Control relays based on distance to supply current to copper coil
+  if (distance1 < 15) {
+    digitalWrite(relay1Pin, HIGH); // Activate Relay 1 to supply current to copper coil for Car 1
+  } else {
+    digitalWrite(relay1Pin, LOW); // Deactivate Relay 1
+  }
+
+  if (distance2 < 15) {
+    digitalWrite(relay2Pin, HIGH); // Activate Relay 2 to supply current to copper coil for Car 2
+  } else {
+    digitalWrite(relay2Pin, LOW); // Deactivate Relay 2
+  }
+
+  // Add delay as needed for sensor reading frequency
+  delay(1000);
+}
