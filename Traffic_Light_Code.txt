@@ -1,0 +1,156 @@
+module traffic_lights(
+    input clk,
+    input rst_n,
+    output reg[2:0] light_A,
+    output reg[2:0] light_B
+
+);
+   reg [2:0] Green;
+   reg [2:0] Red ;
+   reg [2:0] Yellow;
+   
+localparam s0 = 6'b000001,
+           s1 = 6'b000010,
+           s2 = 6'b000100,
+           s3 = 6'b001000,
+           s4 = 6'b010000,
+           s5 = 6'b100000;
+
+  reg[7:0] curr_state;
+  reg[7:0] next_state;
+
+  reg [7:0] count;
+  reg [7:0] count_en;
+  reg count_done;
+
+   localparam SEC5 = 8'd50,     SEC1 = 8'd10;
+   
+
+ always@(posedge clk or negedge rst_n) begin
+      
+     if(!rst_n) begin
+     count <= 8'b0;
+     count_done <= 8'b0;
+   
+     end
+     
+    else begin
+         Green =8'b100;
+          Red =8'b001;
+           Yellow =8'b010;
+     case(count_en)
+      2'b01:
+        begin
+          count_done <=0;
+          if(count <SEC5 - 1)
+             count <= count + 1'b1;
+         else begin
+           count <= 0;
+          count_done <= 1;
+           end
+        end
+      2'b10:
+         begin
+         count_done<=0;
+            if(count <SEC1 - 1)
+            count <=count + 1'b1;
+           else begin
+            count <= 0;
+           count_done <= 1;
+            end
+          end   
+          default: begin
+              count <= 0;
+             count_done <=0;
+            end        
+     endcase
+    end
+  end 
+          
+     always@(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+            
+               curr_state <= s0;
+            end 
+            else begin
+               curr_state <= next_state;
+         end
+       end
+
+    always @(*)
+             case(curr_state)
+             s0: begin 
+               count_en = 2'b01;
+               if(count_done)
+                next_state = s1;
+                end
+             s1: begin 
+                 count_en = 2'b10;
+                 if(count_done)  
+                   next_state = s2;
+                 end  
+             s2: begin
+                count_en=2'b10;
+                if(count_done)  
+                 next_state = s3;
+                 end
+             s3: begin
+                 count_en=2'b01;
+                 if(count_done)
+                  next_state = s4;
+                  end
+             s4: begin
+                 count_en=2'b10;
+                 if(count_done) 
+                 next_state = s5;
+                end 
+            s5: begin
+                count_en=2'b10;
+                if(count_done) 
+                next_state = s0;
+               end
+            default: begin
+                    next_state = s0;
+                    count_en =2'b00;
+                    end 
+            endcase      
+               
+            always@(posedge clk or negedge rst_n) begin
+            if (!rst_n) begin
+             light_A = 3'b000;
+             light_B = 3'b000;
+              end 
+              else begin
+                 case (next_state)
+                    s0:begin 
+                    light_A<=3'b001; 
+                    light_B<=3'b100;
+                    end
+                    s1:begin
+                     light_A<=3'b010;
+                      light_B<=3'b100;
+                      end
+                    s2:begin 
+                    light_A<=3'b100;
+                     light_B<=3'b100;
+                     end
+                    s3:begin                   
+                   light_A<=3'b100; 
+                   light_B<=3'b001;
+                   end
+                    s4:begin
+                     light_A<=3'b100; 
+                     light_B <=3'b010;
+                     end
+                    s5:begin 
+                    light_A <= 3'b100; 
+                    light_B <= 3'b100;
+                    end
+                default: begin 
+                      light_A = 3'b000; 
+                      light_B = 3'b000; 
+                    end   
+              endcase   
+          end
+         end
+      endmodule
